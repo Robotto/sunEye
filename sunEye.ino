@@ -31,7 +31,7 @@ Adafruit_ILI9340 tft = Adafruit_ILI9340(TFT_CS, TFT_DC, TFT_RST);
 int ldr_val = 512;
 
 unsigned long lastGet = 0;
-const unsigned long loopDelay = 1000*60*60*6; //every 6 hours
+const unsigned long loopDelay = 1000*60*30; //every 30 minutes
 
 
 void setup()
@@ -144,6 +144,8 @@ void getIt()
         {
           tcpBuf[incomingCount] = client.read();
           incomingCount++;
+          delayMicroseconds(10);
+
 
           if (incomingCount > bufSize-1) 
           {          
@@ -151,6 +153,7 @@ void getIt()
             incomingCount = 0;
             delayMicroseconds(200);
             Serial.print('.');
+            if(!Serial) delay(2);
           }
         }
         // final < bufSize byte cleanup packet

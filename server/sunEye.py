@@ -31,9 +31,18 @@ if __name__ == "__main__":
 
     print 'Done.. Opening TCP port', TCP_PORT
 
+#Proposed error handling flow:
+# server splits data into 1024 byte chunks and calculates CRC16 of each chunk.
+# Server starts sending chunks preceded by their length (usually 1024) trailed by their CRC16 which means:
+#TX: 2 bytes for length (uint16t) + n bytes + 16bytesCRC * n chunks
+#client responds with 0, if CRC matches and 1 if not.
+#client discards chunk if CRC does not match, and server resends.
+#at final confirmed chunk server closes connection.
+
     while True:
         try:
             conn, addr = s.accept()
+            startTime = time.time()
             print time.ctime(), 'Connection from:', addr
 
             #print TcpInfo.from_socket(conn).tcpi_bytes_acked
@@ -97,11 +106,10 @@ if __name__ == "__main__":
                     #conn.send(byte)
 
             print 'TX done.'
-
             print 'Closing connection'
             conn.shutdown(socket.SHUT_RDWR)
             conn.close()
-
+            print 'Process took', time.time()-startTime, 'Seconds'
             print '--------------------------'
             print 
 

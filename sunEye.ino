@@ -24,11 +24,13 @@ const int hostPort = 1338;
 #define TFT_BACKLIGHT D2
 
 #define LDR_PIN A0
-#define filter_alpha 15
+#define filter_alpha 16
 
 Adafruit_ILI9340 tft = Adafruit_ILI9340(TFT_CS, TFT_DC, TFT_RST);
 
 int ldr_val = 512;
+int lastLDRval = ldr_val;
+bool inputStage1Triggered=false;
 
 unsigned long lastGet = 0;
 const unsigned long loopDelay = 1000*60*30; //every 30 minutes
@@ -51,28 +53,59 @@ void setup()
       tft.fillScreen(ILI9340_BLACK);
       tft.setRotation(1);
 
+      tft.setTextColor(ILI9340_RED);
+      tft.setTextSize(3);
+
       if(SPIFFS.exists("/full.bmp")) bmpDraw("/full.bmp",0,0);
 
-      delay(10000); //wait for host boot
 
-      getIt();
+      //get actual brightness:
+      for(int i=0;i<1023;i++) ldr_val = (((long)ldr_val*filter_alpha)+analogRead(LDR_PIN))/(filter_alpha+1); //low pass
 
-      tft.fillScreen(ILI9340_BLACK);
 
-      bmpDraw("/full.bmp",0,0);
+//      delay(10000); //wait for host boot
+//      getIt();
+//      tft.fillScreen(ILI9340_BLACK);
+//      bmpDraw("/full.bmp",0,0);
 
 }
+
 
 void loop()
 {
   yield();
 
-/*
   ldr_val = (((long)ldr_val*filter_alpha)+analogRead(LDR_PIN))/(filter_alpha+1); //low pass
+  
+  if(millis()%500==0){ //every 500mS:
+  
+  //if light suddenly increases by 32:
+  if(ldr_val<lastLDRval-64) inputStage1Triggered=true; 
+  else inputStage1Triggered=false;
+
+  lastLDRval=ldr_val;
+  }
+
+  if(inputStage1Triggered) {
+    inputStage1Triggered=false;
+    Serial.println("triggered!");
+    lastGet=millis();
+    tft.fillScreen(ILI9340_BLACK);
+    tft.setCursor(0, 0);
+    tft.println("Refreshing...");
+    getIt();
+    tft.fillScreen(ILI9340_BLACK);
+    bmpDraw("/full.bmp",0,0);
+  }
+  //if(millis()%1000==0){
   //Serial.print("ldr_val: ");
   //Serial.println(ldr_val);
-  analogWrite(TFT_BACKLIGHT,ldr_val);
-*/
+  //}
+      //calibrated from: 1023 0
+  int pwmVal=map(ldr_val,900,10,0,PWMRANGE); //invert and scale ADC->PWM
+  analogWrite(TFT_BACKLIGHT,pwmVal);
+  
+
 
   if(millis()>lastGet+loopDelay) {//every 3 hours
     lastGet=millis();

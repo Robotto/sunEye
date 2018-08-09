@@ -96,6 +96,8 @@ void loop()
     getIt();
     tft.fillScreen(ILI9340_BLACK);
     bmpDraw("/full.bmp",0,0);
+    for(int i=0;i<1023;i++) ldr_val = (((long)ldr_val*filter_alpha)+analogRead(LDR_PIN))/(filter_alpha+1); //low pass
+
   }
   //if(millis()%1000==0){
   //Serial.print("ldr_val: ");

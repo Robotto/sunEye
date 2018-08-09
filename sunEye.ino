@@ -42,7 +42,11 @@ void setup()
     Serial.begin(115200);
 
     pinMode(TFT_BACKLIGHT,OUTPUT);
-    analogWrite(TFT_BACKLIGHT,1023);
+
+    //get actual brightness:
+    for(int i=0;i<1023;i++) ldr_val = (((long)ldr_val*filter_alpha)+analogRead(LDR_PIN))/(filter_alpha+1); //low pass
+    analogWrite(TFT_BACKLIGHT,map(ldr_val,1023,10,0,PWMRANGE)); //invert and scale ADC->PWM
+    lastLDRval=ldr_val;
 
 
     bool result = SPIFFS.begin();
@@ -59,8 +63,6 @@ void setup()
       if(SPIFFS.exists("/full.bmp")) bmpDraw("/full.bmp",0,0);
 
 
-      //get actual brightness:
-      for(int i=0;i<1023;i++) ldr_val = (((long)ldr_val*filter_alpha)+analogRead(LDR_PIN))/(filter_alpha+1); //low pass
 
 
 //      delay(10000); //wait for host boot
@@ -79,10 +81,9 @@ void loop()
   
   if(millis()%500==0){ //every 500mS:
   
-  //if light suddenly increases by 32:
+  //if light suddenly increases by 64:
   if(ldr_val<lastLDRval-64) inputStage1Triggered=true; 
   else inputStage1Triggered=false;
-
   lastLDRval=ldr_val;
   }
 
@@ -91,25 +92,29 @@ void loop()
     Serial.println("triggered!");
     lastGet=millis();
     tft.fillScreen(ILI9340_BLACK);
-    tft.setCursor(0, 0);
+    tft.setCursor(48, 96);
     tft.println("Refreshing...");
     getIt();
     tft.fillScreen(ILI9340_BLACK);
     bmpDraw("/full.bmp",0,0);
-    for(int i=0;i<1023;i++) ldr_val = (((long)ldr_val*filter_alpha)+analogRead(LDR_PIN))/(filter_alpha+1); //low pass
 
+    //reset LDR:
+    for(int i=0;i<1023;i++) ldr_val = (((long)ldr_val*filter_alpha)+analogRead(LDR_PIN))/(filter_alpha+1); //low pass
+    lastLDRval=ldr_val;
   }
-  //if(millis()%1000==0){
-  //Serial.print("ldr_val: ");
-  //Serial.println(ldr_val);
-  //}
-      //calibrated from: 1023 0
-  int pwmVal=map(ldr_val,900,10,0,PWMRANGE); //invert and scale ADC->PWM
-  analogWrite(TFT_BACKLIGHT,pwmVal);
+
+  /*
+  if(millis()%1000==0){
+  Serial.print("ldr_val: ");
+  Serial.println(ldr_val);
+  }
+  */
+                     //calibrated from: 1023 0
+  analogWrite(TFT_BACKLIGHT,map(ldr_val,1023,10,0,PWMRANGE)); //invert and scale ADC->PWM
   
 
 
-  if(millis()>lastGet+loopDelay) {//every 3 hours
+  if(millis()>lastGet+loopDelay) {//every $loopDelay milliseconds
     lastGet=millis();
     getIt();
   	tft.fillScreen(ILI9340_BLACK);

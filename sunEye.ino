@@ -5,8 +5,8 @@
 
 #include <ESP8266WiFi.h>
 
-const char* ssid     = "***REMOVED***";
-const char* password = "***REMOVED***";
+const char* ssid     = "nope";
+const char* password = "noope";
 
 const char* host = "192.168.0.5"; //could be global, but this is just lan
 const int hostPort = 1338;

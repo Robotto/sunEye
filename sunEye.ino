@@ -195,6 +195,9 @@ void getIt()
             Serial.print('.');
             if(!Serial) delay(2);
           }
+
+          if(!client.available()) delay(1000); //wait a second to see if more data should happen to be on the way.
+
         }
         // final < bufSize byte cleanup packet
         if (incomingCount > 0) f.write((const uint8_t *)tcpBuf, incomingCount);

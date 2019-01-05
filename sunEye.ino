@@ -5,8 +5,9 @@
 
 #include <ESP8266WiFi.h>
 
-//const char* ssid     = "nope";
-//const char* password = "noope";
+const char* ssid     = "nope";
+const char* password = "noope";
+
 
 const char* host = "192.168.0.5"; //could be global, but this is just lan
 const int hostPort = 1338;
@@ -61,7 +62,7 @@ void setup()
       tft.setTextColor(ILI9340_RED);
       tft.setTextSize(3);
 
-      if(SPIFFS.exists("/full.bmp")) bmpDraw("/full.bmp",0,0);
+      if(SPIFFS.exists("/new.bmp")) bmpDraw("/new.bmp",0,0);
 
 
 
@@ -69,7 +70,7 @@ void setup()
 //      delay(10000); //wait for host boot
 //      getIt();
 //      tft.fillScreen(ILI9340_BLACK);
-//      bmpDraw("/full.bmp",0,0);
+//      bmpDraw("/new.bmp",0,0);
 
 }
 
@@ -98,7 +99,7 @@ void loop()
     tft.println("Refreshing...");
     getIt();
     tft.fillScreen(ILI9340_BLACK);
-    bmpDraw("/full.bmp",0,0);
+    bmpDraw("/new.bmp",0,0);
 
     //reset LDR:
     for(int i=0;i<1023;i++) ldr_val = (((long)ldr_val*filter_alpha)+analogRead(LDR_PIN))/(filter_alpha+1); //low pass
@@ -120,7 +121,7 @@ void loop()
     lastGet=millis();
     getIt();
   	tft.fillScreen(ILI9340_BLACK);
-    bmpDraw("/full.bmp",0,0);
+    bmpDraw("/new.bmp",0,0);
   }
 }
 
@@ -168,17 +169,17 @@ void getIt()
 
   delay(5000);
 
-  File f = SPIFFS.open("/full.bmp", "w");
+  File f = SPIFFS.open("/new.bmp", "w");
 
 
   while(!client.available());
 
       Serial.print("Getting image");
 
-      //client.setNoDelay(1);
+      client.setNoDelay(true);
       // stuff...
 
-        const int bufSize = 2048; 
+        const int bufSize = 1024; 
         byte tcpBuf[bufSize];
         int incomingCount = 0;
         
@@ -186,19 +187,19 @@ void getIt()
         {
           tcpBuf[incomingCount] = client.read();
           incomingCount++;
-          //delayMicroseconds(10);
+          delayMicroseconds(10);
 
 
           if (incomingCount > bufSize-1) 
           {          
             f.write((const uint8_t *)tcpBuf, bufSize);
             incomingCount = 0;
-            //delayMicroseconds(200);
-            //Serial.print('.');
-            //if(!Serial) delay(2);
+            delayMicroseconds(200);
+            Serial.print('.');
+            if(!Serial) delay(2);
           }
 
-          if(!client.available()) {Serial.print("."); delay(100);} //wait a bit to see if more data should happen to be on the way.
+          if(!client.available()) {Serial.print("!"); delay(500);} //wait a bit to see if more data should happen to be on the way.
 
         }
         // final < bufSize byte cleanup packet

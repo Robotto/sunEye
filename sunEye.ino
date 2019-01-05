@@ -94,7 +94,7 @@ void loop()
     inputStage1Triggered=false;
     Serial.println("triggered!");
     lastGet=millis();
-    tft.fillScreen(ILI9340_BLACK);
+    //tft.fillScreen(ILI9340_BLACK);
     tft.setCursor(48, 96);
     tft.println("Refreshing...");
     getIt();
@@ -120,7 +120,7 @@ void loop()
   if(millis()>lastGet+loopDelay) {//every $loopDelay milliseconds
     lastGet=millis();
     getIt();
-  	tft.fillScreen(ILI9340_BLACK);
+  	//tft.fillScreen(ILI9340_BLACK);
     bmpDraw("/new.bmp",0,0);
   }
 }
@@ -167,10 +167,9 @@ void getIt()
     return;
   }
 
-  delay(5000);
-
   File f = SPIFFS.open("/new.bmp", "w");
 
+  delay(5000);
 
   while(!client.available());
 
@@ -187,19 +186,22 @@ void getIt()
         {
           tcpBuf[incomingCount] = client.read();
           incomingCount++;
-          delayMicroseconds(10);
+          //delayMicroseconds(10);
 
 
           if (incomingCount > bufSize-1) 
           {          
             f.write((const uint8_t *)tcpBuf, bufSize);
             incomingCount = 0;
-            delayMicroseconds(200);
-            Serial.print('.');
-            if(!Serial) delay(2);
+            //delayMicroseconds(200);
+            //Serial.print('.');
+            //if(!Serial) delay(2);
+            //maybe implement a progress bar on the TFT? image size is usually around 230538 bytes...
+            //
+            delay(20);
           }
 
-          if(!client.available()) {Serial.print("!"); delay(500);} //wait a bit to see if more data should happen to be on the way.
+          if(!client.available()) {Serial.print("!"); delay(50);} //wait a bit to see if more data should happen to be on the way.
 
         }
         // final < bufSize byte cleanup packet
@@ -209,11 +211,15 @@ void getIt()
 
         Serial.println("Download took: " + String(millis()-startTime) + "mS");
         
+        delay(1000); //is file write done?
+
         f.close();
         Serial.println();
         Serial.println("disconnecting.");
         client.stop();
         WiFi.disconnect();
+
+        delay(1000); //just trying random things now...
 } 
 
 

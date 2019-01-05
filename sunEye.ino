@@ -5,8 +5,8 @@
 
 #include <ESP8266WiFi.h>
 
-const char* ssid     = "nope";
-const char* password = "noope";
+//const char* ssid     = "nope";
+//const char* password = "noope";
 
 const char* host = "192.168.0.5"; //could be global, but this is just lan
 const int hostPort = 1338;
@@ -48,6 +48,7 @@ void setup()
     analogWrite(TFT_BACKLIGHT,map(ldr_val,1023,10,0,PWMRANGE)); //invert and scale ADC->PWM
     lastLDRval=ldr_val;
 
+    delay(1000);
 
     bool result = SPIFFS.begin();
     Serial.println("SPIFFS opened: " + result);
@@ -72,6 +73,7 @@ void setup()
 
 }
 
+unsigned long tick;
 
 void loop()
 {
@@ -79,8 +81,8 @@ void loop()
 
   ldr_val = (((long)ldr_val*filter_alpha)+analogRead(LDR_PIN))/(filter_alpha+1); //low pass
   
-  if(millis()%500==0){ //every 500mS:
-  
+  if(millis()>tick+500){ //every 500mS:
+  tick=millis();
   //if light suddenly increases by 64:
   if(ldr_val<lastLDRval-64) inputStage1Triggered=true; 
   else inputStage1Triggered=false;
@@ -171,12 +173,12 @@ void getIt()
 
   while(!client.available());
 
-      Serial.println("Getting image...");
+      Serial.print("Getting image");
 
-      client.setNoDelay(1);
+      //client.setNoDelay(1);
       // stuff...
 
-        const int bufSize = 1024; 
+        const int bufSize = 2048; 
         byte tcpBuf[bufSize];
         int incomingCount = 0;
         
@@ -184,25 +186,25 @@ void getIt()
         {
           tcpBuf[incomingCount] = client.read();
           incomingCount++;
-          delayMicroseconds(10);
+          //delayMicroseconds(10);
 
 
           if (incomingCount > bufSize-1) 
           {          
             f.write((const uint8_t *)tcpBuf, bufSize);
             incomingCount = 0;
-            delayMicroseconds(200);
-            Serial.print('.');
-            if(!Serial) delay(2);
+            //delayMicroseconds(200);
+            //Serial.print('.');
+            //if(!Serial) delay(2);
           }
 
-          if(!client.available()) delay(1000); //wait a second to see if more data should happen to be on the way.
+          if(!client.available()) {Serial.print("."); delay(100);} //wait a bit to see if more data should happen to be on the way.
 
         }
         // final < bufSize byte cleanup packet
         if (incomingCount > 0) f.write((const uint8_t *)tcpBuf, incomingCount);
 
-        Serial.println("Done!");
+        Serial.println(" Done!");
 
         Serial.println("Download took: " + String(millis()-startTime) + "mS");
         

@@ -2,21 +2,13 @@
 #include "Adafruit_ILI9340.h" // Hardware-specific library - Get the ESP8266 compatible fork from here: https://github.com/glennirwin/Adafruit_ILI9340
 #include "FS.h"
 
-
 #include <ESP8266WiFi.h>
 
 const char* ssid     = "nope";
 const char* password = "noope";
 
-
 const char* host = "192.168.0.5"; //could be global, but this is just lan
 const int hostPort = 1338;
-
-//
-//#if defined(__SAM3X8E__)
-//    #undef __FlashStringHelper::F(string_literal)
-//    #define F(string_literal) string_literal
-//#endif
 
 #define TFT_RST D8
 #define TFT_DC D0
@@ -36,7 +28,6 @@ bool inputStage1Triggered=false;
 unsigned long lastGet = 0;
 const unsigned long loopDelay = 1000*60*30; //every 30 minutes
 
-
 void setup()
 {
 
@@ -51,10 +42,11 @@ void setup()
 
     delay(1000);
 
-    bool result = SPIFFS.begin();
-    Serial.println("SPIFFS opened: " + result);
-    if(!result) Serial.println("Error: doing while(1)...");
-    
+    if(SPIFFS.begin()) Serial.println("SPIFFS opened.");
+    else { Serial.println("Error: doing while(1)..."); while(1);}
+
+    //if(SPIFFS.format()) Serial.println("Sucessfully formatted SPIFFS"); //takes about a minute. Don't panic.
+
       tft.begin();
       tft.fillScreen(ILI9340_BLACK);
       tft.setRotation(1);
@@ -62,16 +54,12 @@ void setup()
       tft.setTextColor(ILI9340_RED);
       tft.setTextSize(3);
 
-      if(SPIFFS.exists("/new.bmp")) bmpDraw("/new.bmp",0,0);
-
-
-
-
-//      delay(10000); //wait for host boot
-//      getIt();
-//      tft.fillScreen(ILI9340_BLACK);
-//      bmpDraw("/new.bmp",0,0);
-
+      if(SPIFFS.exists("/test.bmp")) bmpDraw("/test.bmp",0,0);
+      
+      else{
+      tft.setCursor(48, 48);
+      tft.println("no file!");
+      }
 }
 
 unsigned long tick;
@@ -94,34 +82,36 @@ void loop()
     inputStage1Triggered=false;
     Serial.println("triggered!");
     lastGet=millis();
-    //tft.fillScreen(ILI9340_BLACK);
     tft.setCursor(48, 96);
     tft.println("Refreshing...");
+
+    SPIFFS.remove("/test.bmp");
+
+    if(!SPIFFS.exists("/test.bmp")) Serial.println("successfully removed old test.bmp");
+
     getIt();
+    
     tft.fillScreen(ILI9340_BLACK);
-    bmpDraw("/new.bmp",0,0);
+      
+    if(SPIFFS.exists("/test.bmp")) bmpDraw("/test.bmp",0,0);
+    else{
+      tft.setCursor(48, 48);
+      tft.println("no file!");
+    }
 
     //reset LDR:
     for(int i=0;i<1023;i++) ldr_val = (((long)ldr_val*filter_alpha)+analogRead(LDR_PIN))/(filter_alpha+1); //low pass
     lastLDRval=ldr_val;
   }
 
-  /*
-  if(millis()%1000==0){
-  Serial.print("ldr_val: ");
-  Serial.println(ldr_val);
-  }
-  */
                      //calibrated from: 1023 0
   analogWrite(TFT_BACKLIGHT,map(ldr_val,1023,10,0,PWMRANGE)); //invert and scale ADC->PWM
-  
-
 
   if(millis()>lastGet+loopDelay) {//every $loopDelay milliseconds
     lastGet=millis();
     getIt();
   	//tft.fillScreen(ILI9340_BLACK);
-    bmpDraw("/new.bmp",0,0);
+    bmpDraw("/test.bmp",0,0);
   }
 }
 
@@ -160,45 +150,53 @@ void getIt()
   Serial.println(WiFi.localIP());
 
   Serial.print("connecting to ");
-  Serial.println(host);
+  Serial.print(host);
+  Serial.print(": ");
 
   if (!client.connect(host, hostPort)) {
     Serial.println("connection failed");
     return;
   }
 
-  File f = SPIFFS.open("/new.bmp", "w");
+  Serial.println("Success!");
 
-  delay(5000);
+  Serial.println("Awaiting data");
 
-  while(!client.available());
+  while(!client.available()) {delay(1000); Serial.print(".");}
+  Serial.println();
+  Serial.print("Getting image");
+  File f = SPIFFS.open("/test.bmp", "w");
 
-      Serial.print("Getting image");
-
-      client.setNoDelay(true);
-      // stuff...
-
-        const int bufSize = 1024; 
+      //client.setNoDelay(true); //don't pool small packages
+       /*
+        while (client.available())
+        {
+          f.write(client.read());
+          if(!client.available()) delay(10);
+        }
+        */
+        const int bufSize = 64; 
         byte tcpBuf[bufSize];
         int incomingCount = 0;
-        
-        while (client.available())
+        int remainingByteCount = 230538; //since it's a BMP it never actually changes size :D
+
+        //while (client.available())
+        while(remainingByteCount>0)
         {
           tcpBuf[incomingCount] = client.read();
           incomingCount++;
+          remainingByteCount--;
           //delayMicroseconds(10);
-
 
           if (incomingCount > bufSize-1) 
           {          
             f.write((const uint8_t *)tcpBuf, bufSize);
             incomingCount = 0;
-            //delayMicroseconds(200);
-            //Serial.print('.');
-            //if(!Serial) delay(2);
-            //maybe implement a progress bar on the TFT? image size is usually around 230538 bytes...
-            //
-            delay(20);
+            delayMicroseconds(200);
+            
+            float progress=100.0-((float)remainingByteCount/230538.0*100.0);
+            for(int i=140;i<150;i++) tft.drawPixel((int)(progress*3.2),i,ILI9340_RED); //10 px wide progress bar
+            
           }
 
           if(!client.available()) {Serial.print("!"); delay(50);} //wait a bit to see if more data should happen to be on the way.

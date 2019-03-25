@@ -10,6 +10,7 @@ KP=$(curl -s https://services.swpc.noaa.gov/text/daily-geomagnetic-indices.txt |
 
 
 #colorize kp index text:
+# http://www.aurora-service.eu/aurora-school/all-about-the-kp-index/
 kpColour=green
 if [ $((KP)) -ge 4 ]
 then

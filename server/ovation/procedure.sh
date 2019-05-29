@@ -6,9 +6,8 @@ wget https://services.swpc.noaa.gov/images/animations/ovation-north/latest.jpg -
 
 
 #get current KP index (tail gets latest line, sed outputs everything after the last space in the line, head outputs current KP)
-KP=$(curl -s https://services.swpc.noaa.gov/text/daily-geomagnetic-indices.txt | tail -n 1 | sed 's/.*\ //' | head -c 1 2>&1)
-
-
+#KP=$(curl -s https://services.swpc.noaa.gov/text/daily-geomagnetic-indices.txt | tail -n 1 | sed 's/.*\ //' | head -c 1 2>&1)
+KP=$(curl https://services.swpc.noaa.gov/json/planetary_k_index_1m.json | jq ".[-1] | .kp_index")
 #colorize kp index text:
 # http://www.aurora-service.eu/aurora-school/all-about-the-kp-index/
 kpColour=green

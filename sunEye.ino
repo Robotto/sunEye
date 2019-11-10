@@ -4,8 +4,8 @@
 
 #include <ESP8266WiFi.h>
 
-const char* ssid     = "Nope";
-const char* password = "not happening";
+const char* ssid     = "nope";
+const char* password = "nope nope";
 
 const char* host = "192.168.0.5"; //could be global, but this is just lan
 const int hostPort = 1338;
@@ -62,8 +62,9 @@ void setup()
       else{
       tft.setCursor(48, 48);
       tft.println("no file!");
-      inputStage1Triggered=true;
-
+      
+      //inputStage1Triggered=true; //doesn't work because trigger is reset in loop.
+      lastLDRval=1024+64; //the ldrval check in loop() will trigger input stage 1. (ldrval goes from 0 to 1023)
       }
 }
 

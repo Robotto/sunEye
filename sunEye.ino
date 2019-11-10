@@ -45,7 +45,10 @@ void setup()
     if(SPIFFS.begin()) Serial.println("SPIFFS opened.");
     else { Serial.println("Error: doing while(1)..."); while(1);}
 
+    //FORMAT SPIFFS:
     //if(SPIFFS.format()) Serial.println("Sucessfully formatted SPIFFS"); //takes about a minute. Don't panic.
+    //else Serial.println("SPIFFS format failed..."); 
+    //while(1) yield();
 
       tft.begin();
       tft.fillScreen(ILI9340_BLACK);

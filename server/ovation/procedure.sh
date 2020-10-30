@@ -2,7 +2,8 @@
 #input image size: 800²
 #Target image size: 240²
 
-wget https://services.swpc.noaa.gov/images/animations/ovation-north/latest.jpg -O ovation.jpg
+#wget https://services.swpc.noaa.gov/images/animations/ovation-north/latest.jpg -O ovation.jpg
+wget https://services.swpc.noaa.gov/images/animations/ovation/north/latest.jpg -O ovation.jpg
 
 
 #get current KP index (tail gets latest line, sed outputs everything after the last space in the line, head outputs current KP)

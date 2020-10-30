@@ -5,7 +5,7 @@
 #include <ESP8266WiFi.h>
 
 const char* ssid     = "nope";
-const char* password = "noope";
+const char* password = "nope nope";
 
 const char* host = "192.168.0.5"; //could be global, but this is just lan
 const int hostPort = 1338;
@@ -45,7 +45,10 @@ void setup()
     if(SPIFFS.begin()) Serial.println("SPIFFS opened.");
     else { Serial.println("Error: doing while(1)..."); while(1);}
 
+    //FORMAT SPIFFS:
     //if(SPIFFS.format()) Serial.println("Sucessfully formatted SPIFFS"); //takes about a minute. Don't panic.
+    //else Serial.println("SPIFFS format failed..."); 
+    //while(1) yield();
 
       tft.begin();
       tft.fillScreen(ILI9340_BLACK);
@@ -59,6 +62,9 @@ void setup()
       else{
       tft.setCursor(48, 48);
       tft.println("no file!");
+      
+      //inputStage1Triggered=true; //doesn't work because trigger is reset in loop.
+      lastLDRval=1024+64; //the ldrval check in loop() will trigger input stage 1. (ldrval goes from 0 to 1023)
       }
 }
 
